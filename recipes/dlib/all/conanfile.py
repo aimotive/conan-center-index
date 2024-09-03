@@ -143,6 +143,9 @@ class DlibConan(ConanFile):
             replace_in_file(self, dlib_cmakelists, "include(cmake_utils/find_libwebp.cmake)", "find_package(WebP REQUIRED)")
             replace_in_file(self, dlib_cmakelists, "if (WEBP_FOUND)", "if(1)")
             replace_in_file(self, dlib_cmakelists, "${WEBP_LIBRARY}", "WebP::webp")
+        # use CMAKE_CXX_COMPILER_VERSION
+        replace_in_file(self, os.path.join(self.source_folder, "dlib", "cmake_utils", "set_compiler_specific_options.cmake"),
+                "if (GCC_VERSION VERSION_LESS", "if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS")
         if self.options.with_png:
             replace_in_file(self, dlib_cmakelists, "include(cmake_utils/find_libpng.cmake)", "find_package(PNG REQUIRED)")
         if self.options.with_jpeg:
