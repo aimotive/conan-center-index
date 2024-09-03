@@ -1,0 +1,69 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index a72acb8..e06bddc 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -48,6 +48,7 @@ endif()
+ add_library(${PROJECT_NAME} ${serial_SRCS})
+ if(APPLE)
+ 	target_link_libraries(${PROJECT_NAME} ${FOUNDATION_LIBRARY} ${IOKIT_LIBRARY})
++elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "QNX")
+ elseif(UNIX)
+ 	target_link_libraries(${PROJECT_NAME} rt pthread)
+ else()
+diff --git a/src/impl/list_ports/list_ports_linux.cc b/src/impl/list_ports/list_ports_linux.cc
+index 9779d5e..9429f14 100644
+--- a/src/impl/list_ports/list_ports_linux.cc
++++ b/src/impl/list_ports/list_ports_linux.cc
+@@ -1,4 +1,4 @@
+-#if defined(__linux__)
++#if defined(__linux__) || defined(__QNX__)
+ 
+ /*
+  * Copyright (c) 2014 Craig Lilley <cralilley@gmail.com>
+@@ -305,6 +305,9 @@ serial::list_ports()
+     search_globs.push_back("/dev/ttyUSB*");
+     search_globs.push_back("/dev/tty.*");
+     search_globs.push_back("/dev/cu.*");
++#if defined(__QNX__)
++    search_globs.push_back("/dev/ser*");
++#endif
+ 
+     vector<string> devices_found = glob( search_globs );
+ 
+diff --git a/src/impl/unix.cc b/src/impl/unix.cc
+index 0b7ab42..02fbe6b 100755
+--- a/src/impl/unix.cc
++++ b/src/impl/unix.cc
+@@ -11,10 +11,15 @@
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <sys/ioctl.h>
+-#include <sys/signal.h>
+ #include <errno.h>
+ #include <paths.h>
+-#include <sysexits.h>
++#ifdef __QNX__
++# include <devctl.h>
++# include <sys/dcmd_chr.h>
++#else
++# include <sys/signal.h>
++# include <sysexits.h>
++#endif
+ #include <termios.h>
+ #include <sys/param.h>
+ #include <pthread.h>
+@@ -426,6 +431,14 @@ Serial::SerialImpl::reconfigurePort ()
+     options.c_cflag |=  (CNEW_RTSCTS);
+   else
+     options.c_cflag &= (unsigned long) ~(CNEW_RTSCTS);
++#elif defined __QNX__
++  {
++      int data = _SERCTL_RTS_CHG | _SERCTL_CTS_CHG | (rtscts_ ? (_SERCTL_RTS | _SERCTL_CTS) : 0);
++      int error = devctl (fd_, DCMD_CHR_SERCTL, &data, sizeof(data), NULL);
++      if (error) {
++          THROW (IOException, error);
++      }
++   }
+ #else
+ #error "OS Support seems wrong."
+ #endif
