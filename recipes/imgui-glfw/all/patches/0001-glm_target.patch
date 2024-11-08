@@ -1,0 +1,11 @@
+--- a/CMakeLists.txt	2022-10-15 16:28:27.302001800 +0200
++++ b/CMakeLists.txt	2022-10-15 16:27:40.749535881 +0200
+@@ -35,7 +35,7 @@
+ )
+ target_link_libraries(imgui
+     PUBLIC glfw
+-    PRIVATE glm
++    PRIVATE glm::glm
+ )
+ if (WIN32)
+     find_path(GLES2_INCLUDE_DIRS GLES2/gl2.h)

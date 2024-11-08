@@ -1,0 +1,7 @@
+sources:
+  "1.79-aimotive":
+    url: "https://github.com/aimotive-legacy/imgui-glfw/archive/refs/tags/v1.79.0-aimotive.zip"
+    sha256: "27f42cbc896ba2f61ece699ef04c6e8e386c127283cab559d3b2813a85ccc842"
+patches:
+  "1.79-aimotive":
+    - patch_file: "patches/0001-glm_target.patch"
