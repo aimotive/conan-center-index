@@ -2,3 +2,6 @@ sources:
   "1.17.2":
     url: "https://github.com/NVIDIA/cub/archive/refs/tags/1.17.2.tar.gz"
     sha256: "1013a595794548c359f22c07e1f8c620b97e3a577f7e8496d9407f74566a3e2a"
+  "1.8.0":
+    url: "https://github.com/NVIDIA/cub/archive/refs/tags/1.8.0.zip"
+    sha256: "6bfa06ab52a650ae7ee6963143a0bbc667d6504822cbd9670369b598f18c58c3"
