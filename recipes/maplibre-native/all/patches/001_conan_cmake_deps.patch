@@ -1,0 +1,99 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 2b37bc5f5..12953a0a8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,7 @@
+ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+ 
++project("Mapbox GL Native" LANGUAGES CXX C)
++
+ option(MBGL_WITH_CORE_ONLY "Build only the core bits, no platform code" OFF)
+ option(MBGL_WITH_COVERAGE "Enable code coverage collection" OFF)
+ option(MBGL_WITH_QT "Build Mapbox GL Qt bindings" OFF)
+@@ -13,7 +15,6 @@ if (MBGL_WITH_QT AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+     set(CMAKE_OSX_DEPLOYMENT_TARGET 13.0)
+ endif()
+ 
+-project("Mapbox GL Native" LANGUAGES CXX C)
+ 
+ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER Core)
+diff --git a/platform/glfw/CMakeLists.txt b/platform/glfw/CMakeLists.txt
+index 5b44c399f..d23b65951 100644
+--- a/platform/glfw/CMakeLists.txt
++++ b/platform/glfw/CMakeLists.txt
+@@ -1,7 +1,7 @@
+ find_package(OpenGL REQUIRED)
+ find_package(PkgConfig REQUIRED)
+ 
+-pkg_search_module(GLFW glfw3 REQUIRED)
++find_package(glfw3 REQUIRED)
+ 
+ add_library(
+     mbgl-glfw
+@@ -39,27 +39,20 @@ endif()
+ target_include_directories(
+     mbgl-glfw
+     PRIVATE
+-        ${GLFW_INCLUDE_DIRS}
+         # For /platform/default/src/mbgl/map/map_snapshotter.hpp
+     PRIVATE ${PROJECT_SOURCE_DIR}/src
+ )
+ 
+-# Use target_link_directories when we move away from CMake 3.10.
+-target_link_libraries(
+-    mbgl-glfw
+-    PRIVATE $<$<BOOL:${GLFW_LIBRARY_DIRS}>:-L${GLFW_LIBRARY_DIRS}>
+-)
+-
+ target_link_libraries(
+     mbgl-glfw
+     PRIVATE
+-        ${GLFW_LIBRARIES}
+         Mapbox::Base::Extras::args
+         Mapbox::Base::Extras::filesystem
+         Mapbox::Base::Extras::rapidjson
+         Mapbox::Map
+         mbgl-compiler-options
+         Mapbox::Base::cheap-ruler-cpp
++        glfw
+ )
+ 
+ if(MBGL_WITH_OPENGL)
+diff --git a/platform/linux/linux.cmake b/platform/linux/linux.cmake
+index 9c40f0948..0c364850d 100644
+--- a/platform/linux/linux.cmake
++++ b/platform/linux/linux.cmake
+@@ -5,8 +5,7 @@ find_package(JPEG REQUIRED)
+ find_package(PNG REQUIRED)
+ find_package(PkgConfig REQUIRED)
+ find_package(X11 REQUIRED)
+-
+-pkg_search_module(LIBUV libuv REQUIRED)
++find_package(libuv REQUIRED)
+ 
+ target_compile_definitions(
+     mbgl-core
+@@ -88,9 +87,6 @@ target_include_directories(
+     mbgl-core
+     PUBLIC ${PROJECT_SOURCE_DIR}/platform/default/include
+     PRIVATE
+-        ${CURL_INCLUDE_DIRS}
+-        ${JPEG_INCLUDE_DIRS}
+-        ${LIBUV_INCLUDE_DIRS}
+         ${X11_INCLUDE_DIRS}
+ )
+ 
+@@ -114,9 +110,9 @@ endif()
+ target_link_libraries(
+     mbgl-core
+     PRIVATE
+-        ${CURL_LIBRARIES}
+-        ${JPEG_LIBRARIES}
+-        ${LIBUV_LIBRARIES}
++        CURL::libcurl
++        JPEG::JPEG
++        uv
+         ${X11_LIBRARIES}
+         $<$<NOT:$<BOOL:${MBGL_USE_BUILTIN_ICU}>>:ICU::i18n>
+         $<$<NOT:$<BOOL:${MBGL_USE_BUILTIN_ICU}>>:ICU::uc>
