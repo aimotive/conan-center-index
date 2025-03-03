@@ -50,7 +50,6 @@ class AbseilConan(ConanFile):
         }.get(self._min_cppstd, {})
 
     def export_sources(self):
-        copy(self, "abi_trick/*", self.recipe_folder, self.export_sources_folder)
         export_conandata_patches(self)
 
     def config_options(self):
@@ -88,7 +87,7 @@ class AbseilConan(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self)
         tc.variables["ABSL_ENABLE_INSTALL"] = True
-        tc.variables["ABSL_PROPAGATE_CXX_STD"] = True
+        tc.variables["ABSL_PROPAGATE_CXX_STD"] = False
         tc.variables["BUILD_TESTING"] = False
         # We force CMP0067 policy to NEW for our abi trick in _patch_sources()
         tc.cache_variables["CMAKE_POLICY_DEFAULT_CMP0067"] = "NEW"
@@ -110,20 +109,10 @@ class AbseilConan(ConanFile):
             """.format(str(self.settings.arch)))
             save(self, toolchain_file, cmake_system_processor_block, append=True)
 
-        # Trick to capture ABI
-        cmakelists = os.path.join(self.source_folder, "CMakeLists.txt")
-        abi_trick_block = textwrap.dedent("""\
-            list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/../abi_trick")
-            include(conan_abi_test)
-        """)
-        save(self, cmakelists, abi_trick_block, append=True)
-
     def build(self):
         self._patch_sources()
         cmake = CMake(self)
         cmake.configure()
-        abi_file = _ABIFile(self, os.path.join(self.build_folder, "abi.h"))
-        abi_file.replace_in_options_file(os.path.join(self.source_folder, "absl", "base", "options.h"))
         cmake.build()
 
     def package(self):
@@ -140,10 +129,6 @@ class AbseilConan(ConanFile):
 
         # Create a json helper file in order to populate package_info() at consume time
         self._create_components_file(self._components_helper_filepath, components)
-
-        # Create a build-module that will propagate the required cxx_std to consumers of this recipe's targets
-        # TODO: Revisit with feedback from https://github.com/conan-io/conan/issues/10281
-        self._create_cxx_std_module_file(self._cxx_std_module_filepath, components)
 
     def _load_components_from_cmake_target_file(self, absl_target_file_path):
         components = {}
@@ -211,18 +196,6 @@ class AbseilConan(ConanFile):
     def _components_helper_filepath(self):
         return os.path.join(self.package_folder, "lib", "components.json")
 
-    def _create_cxx_std_module_file(self, output_file, components):
-        content = ""
-        cxx_std_required = _ABIFile(self, os.path.join(self.build_folder, "abi.h")).cxx_std()
-        for _, values in components.items():
-            cmake_target = values["cmake_target"]
-            content += f"target_compile_features(absl::{cmake_target} INTERFACE cxx_std_{cxx_std_required})\n"
-        save(self, output_file, content)
-
-    @property
-    def _cxx_std_module_filepath(self):
-        return os.path.join(self.package_folder, "lib", "cmake", "conan_trick", "cxx_std.cmake")
-
     def package_info(self):
         self.cpp_info.set_property("cmake_file_name", "absl")
 
@@ -243,29 +216,3 @@ class AbseilConan(ConanFile):
 
         self.cpp_info.names["cmake_find_package"] = "absl"
         self.cpp_info.names["cmake_find_package_multi"] = "absl"
-
-        self.cpp_info.set_property("cmake_build_modules", [self._cxx_std_module_filepath])
-        self.cpp_info.components["absl_config"].build_modules["cmake_find_package"] = [self._cxx_std_module_filepath]
-        self.cpp_info.components["absl_config"].build_modules["cmake_find_package_multi"] = [self._cxx_std_module_filepath]
-
-
-class _ABIFile:
-    abi = {}
-
-    def __init__(self, conanfile, filepath):
-        self.conanfile = conanfile
-        abi_h = load(self.conanfile, filepath)
-        for line in abi_h.splitlines():
-            if line.startswith("#define"):
-                tokens = line.split()
-                if len(tokens) == 3:
-                    self.abi[tokens[1]] = tokens[2]
-
-    def replace_in_options_file(self, options_filepath):
-        for name, value in self.abi.items():
-            replace_in_file(self.conanfile, options_filepath,
-                    "#define ABSL_OPTION_{} 2".format(name),
-                    "#define ABSL_OPTION_{} {}".format(name, value))
-
-    def cxx_std(self):
-        return 17 if any([v == "1" for k, v in self.abi.items()]) else 11
