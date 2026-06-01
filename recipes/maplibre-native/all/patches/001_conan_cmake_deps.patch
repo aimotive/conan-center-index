@@ -61,7 +61,7 @@ index 5b44c399f..d23b65951 100644
  
  if(MBGL_WITH_OPENGL)
 diff --git a/platform/linux/linux.cmake b/platform/linux/linux.cmake
-index 9c40f0948..0c364850d 100644
+index 9c40f0948..4778d645b 100644
 --- a/platform/linux/linux.cmake
 +++ b/platform/linux/linux.cmake
 @@ -5,8 +5,7 @@ find_package(JPEG REQUIRED)
@@ -93,7 +93,7 @@ index 9c40f0948..0c364850d 100644
 -        ${LIBUV_LIBRARIES}
 +        CURL::libcurl
 +        JPEG::JPEG
-+        uv
++        libuv::uv_a
          ${X11_LIBRARIES}
          $<$<NOT:$<BOOL:${MBGL_USE_BUILTIN_ICU}>>:ICU::i18n>
          $<$<NOT:$<BOOL:${MBGL_USE_BUILTIN_ICU}>>:ICU::uc>
