@@ -1,3 +1,13 @@
 patches:
   "9e90b9e0-aimotive":
-    - patch_file: "patches/001_conan_cmake_deps.patch"
+    - patch_file: "patches/001_conan_cmake_deps-9e90b9e0.patch"
+  "d9b561a1-aimotive":
+    - patch_file: "patches/001_conan_cmake_deps-d9b561a1.patch"
+
+sources:
+  "9e90b9e0-aimotive":
+    url: "ssh://git@git.aimotive.com:29418/david.bucsu/maplibre-gl-native.git"
+    commit: "9e90b9e0b63334b03de2186bda98442e2fec25b4"
+  "d9b561a1-aimotive":
+    url: "ssh://git@git.aimotive.com:29418/david.bucsu/maplibre-gl-native.git"
+    commit: "d9b561a15b16c64079fdd16c87c516b46481265f"

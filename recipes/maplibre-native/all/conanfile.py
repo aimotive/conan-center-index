@@ -43,14 +43,15 @@ class MaplibreNativeConan(ConanFile):
         deps.generate()
 
     def source(self):
+        conan_data = self.conan_data["sources"][self.version]
         git = Git(self)
-        git.clone(url="ssh://git@git.aimotive.com:29418/david.bucsu/maplibre-gl-native.git", target=".")
+        git.clone(url=conan_data["url"], target=".")
         git.folder = self.folders.source
-        git.checkout("9e90b9e0b63334b03de2186bda98442e2fec25b4")
+        git.checkout(conan_data["commit"])
         git.run("submodule update --init --recursive")
+        apply_conandata_patches(self)
 
     def build(self):
-        apply_conandata_patches(self)
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
